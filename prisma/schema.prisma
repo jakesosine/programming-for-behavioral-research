@@ -11,3 +11,10 @@ generator client {
 datasource db {
   provider = "postgresql"
 }
+
+model Participant {
+  id         String   @id @default(cuid()) // unique internal ID, generated automatically
+  prolificId String   @unique // the ID the participant types in; must be unique
+  createdAt  DateTime @default(now()) // timestamp of when they entered the experiment
+  consented  Boolean  @default(false) // updated to true after they complete the consent form
+}
