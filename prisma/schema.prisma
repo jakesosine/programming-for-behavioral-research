@@ -13,8 +13,19 @@ datasource db {
 }
 
 model Participant {
-  id         String   @id @default(cuid()) // unique internal ID, generated automatically
-  prolificId String   @unique // the ID the participant types in; must be unique
-  createdAt  DateTime @default(now()) // timestamp of when they entered the experiment
-  consented  Boolean  @default(false) // updated to true after they complete the consent form
+  id           String        @id @default(cuid())
+  prolificId   String        @unique
+  createdAt    DateTime      @default(now())
+  consented    Boolean       @default(false)
+  demographics Demographics? // one participant has at most one demographics record
+}
+
+model Demographics {
+  id            String      @id @default(cuid())
+  participantId String      @unique // each participant has exactly one record
+  participant   Participant @relation(fields: [participantId], references: [id])
+  age           Int // whole number
+  gender        String // stored as text from the dropdown selection
+  education     String // highest level completed
+  submittedAt   DateTime    @default(now()) // when the form was submitted
 }
