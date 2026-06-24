@@ -17,7 +17,7 @@ async function agreeToConsent() {
     data: { consented: true },
   });
 
-  redirect("/instructions");
+  redirect("/demographics");
 }
 
 async function declineConsent() {
