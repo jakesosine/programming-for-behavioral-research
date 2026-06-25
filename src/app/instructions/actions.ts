@@ -20,5 +20,5 @@ export async function completeInstructions(attempts: number) {
     },
   });
 
-  redirect("/practice");
+  redirect("/task");
 }
