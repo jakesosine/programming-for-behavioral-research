@@ -13,11 +13,13 @@ datasource db {
 }
 
 model Participant {
-  id           String        @id @default(cuid())
-  prolificId   String        @unique
-  createdAt    DateTime      @default(now())
-  consented    Boolean       @default(false)
-  demographics Demographics? // one participant has at most one demographics record
+  id                    String        @id @default(cuid())
+  prolificId            String        @unique
+  createdAt             DateTime      @default(now())
+  consented             Boolean       @default(false)
+  demographics          Demographics? // one participant has at most one demographics record
+  instructionsCompleted Boolean       @default(false) // true after passing the check
+  comprehensionAttempts Int           @default(0) // how many tries it took
 }
 
 model Demographics {
