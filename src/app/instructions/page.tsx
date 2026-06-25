@@ -6,15 +6,11 @@ import { completeInstructions } from "./actions";
 const steps = [
   {
     title: "Welcome to the Study",
-    body: "In this study you will press a button on screen. Each press may earn you points. Points represent a bonus payment added to your base compensation.",
+    body: "In this study you will press buttons on screen. Your goal is simply to press the buttons throughout the session.",
   },
   {
     title: "How Points Work",
-    body: "Not every button press will earn a point. You may need to press several times before earning one. Keep pressing at whatever pace feels natural to you.",
-  },
-  {
-    title: "The Rules May Change",
-    body: "The study has multiple phases. The rules about how points are earned may change between phases. You will not be told when a change happens. Just continue pressing the button throughout.",
+    body: "Pressing a button may earn you a point. Not every press will earn one. Just continue pressing at whatever pace feels natural to you.",
   },
   {
     title: "Duration",
@@ -30,16 +26,6 @@ const questions = [
       "You may earn a point",
       "Nothing happens",
       "The study ends",
-    ],
-    correct: 1,
-  },
-  {
-    question: "Will the rules stay the same for the entire study?",
-    options: [
-      "Yes, the rules never change",
-      "No, the rules may change between phases",
-      "Only if you press fast enough",
-      "The instructions did not say",
     ],
     correct: 1,
   },
