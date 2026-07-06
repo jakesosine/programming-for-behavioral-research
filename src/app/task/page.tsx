@@ -4,14 +4,12 @@ import { useState, useEffect, useRef } from "react";
 import { recordResponse, completeTask } from "./actions";
 
 // --- Experimental parameters ---
-const BLOCK_SECS = 5;
-const MIN_BLOCKS = 3;
-const STEADY_THRESHOLD = 0.3;
-const PHASE3_BLOCKS = 5;
+const PHASE_MINS = [0.5, 0.5, 0.2]; // minutes per condition (phase 1, 2, 3)
+const PHASE_BG_COLORS = ["#e0f2fe", "#fef9c3", "#fce7f3"]; // background color per phase
 const FR_R1 = 1;
 const FR_R2 = 1;
-const CIRCLE_SIZE = 80; // diameter in pixels
-const SPEED = 0.5; // pixels per animation frame
+const CIRCLE_SIZE = 120; // diameter in pixels
+const SPEED = 5.5; // pixels per animation frame
 // --------------------------------
 
 type Circle = { x: number; y: number; dx: number; dy: number };
@@ -19,14 +17,6 @@ type Circle = { x: number; y: number; dx: number; dy: number };
 function randomVelocity() {
   const angle = Math.random() * 2 * Math.PI;
   return { dx: Math.cos(angle) * SPEED, dy: Math.sin(angle) * SPEED };
-}
-
-function isSteadyState(blockRates: number[]): boolean {
-  if (blockRates.length < 3) return false;
-  const last3 = blockRates.slice(-3);
-  const mean = last3.reduce((a, b) => a + b, 0) / 3;
-  if (mean === 0) return false;
-  return last3.every((r) => Math.abs(r - mean) / mean <= STEADY_THRESHOLD);
 }
 
 const CIRCLE_STYLES = [
@@ -37,8 +27,7 @@ const CIRCLE_STYLES = [
 
 export default function TaskPage() {
   const [phase, setPhase] = useState(1);
-  const [block, setBlock] = useState(1);
-  const [blockSecs, setBlockSecs] = useState(0);
+  const [phaseElapsed, setPhaseElapsed] = useState(0);
   const [points, setPoints] = useState(0);
   const [presses1, setPresses1] = useState(0);
   const [presses2, setPresses2] = useState(0);
@@ -50,12 +39,23 @@ export default function TaskPage() {
     { x: 200, y: 250, ...randomVelocity() },
   ]);
 
+  const [transitionLabel, setTransitionLabel] = useState<string | null>(null);
+
   const containerRef = useRef<HTMLDivElement>(null);
-  const blockPressesCurrent = useRef(0);
-  const phaseBlockRates = useRef<number[]>([]);
   const calledComplete = useRef(false);
-  const phase3Blocks = useRef(0);
   const animRef = useRef<number>(0);
+  const isFirstPhase = useRef(true);
+
+  // Show overlay on phase change (skip phase 1 start)
+  useEffect(() => {
+    if (isFirstPhase.current) {
+      isFirstPhase.current = false;
+      return;
+    }
+    setTransitionLabel(`Phase ${phase}`);
+    const t = setTimeout(() => setTransitionLabel(null), 2000);
+    return () => clearTimeout(t);
+  }, [phase]);
 
   // Circle animation loop
   useEffect(() => {
@@ -86,45 +86,29 @@ export default function TaskPage() {
     };
   }, [done]);
 
-  // Block timer and phase criterion
+  // Phase timer
   useEffect(() => {
     if (done) return;
     const t = setTimeout(() => {
-      const next = blockSecs + 1;
-      if (next >= BLOCK_SECS) {
-        const rate = (blockPressesCurrent.current / BLOCK_SECS) * 60;
-        phaseBlockRates.current = [...phaseBlockRates.current, rate];
-        blockPressesCurrent.current = 0;
-
-        if (phase === 3) {
-          phase3Blocks.current += 1;
-          if (phase3Blocks.current >= PHASE3_BLOCKS) {
-            if (!calledComplete.current) {
-              calledComplete.current = true;
-              setDone(true);
-              completeTask();
-            }
-            return;
+      const next = phaseElapsed + 1;
+      const limit = PHASE_MINS[phase - 1] * 60;
+      if (next >= limit) {
+        if (phase >= PHASE_MINS.length) {
+          if (!calledComplete.current) {
+            calledComplete.current = true;
+            setDone(true);
+            completeTask();
           }
-        } else if (
-          block >= MIN_BLOCKS &&
-          isSteadyState(phaseBlockRates.current)
-        ) {
-          phaseBlockRates.current = [];
-          setPhase((p) => p + 1);
-          setBlock(1);
-          setBlockSecs(0);
           return;
         }
-
-        setBlock((b) => b + 1);
-        setBlockSecs(0);
+        setPhase((p) => p + 1);
+        setPhaseElapsed(0);
       } else {
-        setBlockSecs(next);
+        setPhaseElapsed(next);
       }
     }, 1000);
     return () => clearTimeout(t);
-  }, [blockSecs, block, phase, done]);
+  }, [phaseElapsed, phase, done]);
 
   async function handleClick(index: number) {
     if (done) return;
@@ -142,7 +126,6 @@ export default function TaskPage() {
         setFeedback(true);
         setTimeout(() => setFeedback(false), 400);
       }
-      blockPressesCurrent.current += 1;
     } else if (index === 1 && phase === 2) {
       const next = presses2 + 1;
       setPresses2(next);
@@ -152,19 +135,21 @@ export default function TaskPage() {
         setFeedback(true);
         setTimeout(() => setFeedback(false), 400);
       }
-      blockPressesCurrent.current += 1;
     }
 
-    await recordResponse(phase, block, button, reinforced);
+    await recordResponse(phase, button, reinforced);
   }
 
-  const secsLeft = BLOCK_SECS - blockSecs;
+  const limit = PHASE_MINS[phase - 1] * 60;
+  const secsLeft = limit - phaseElapsed;
+  const minsLeft = Math.floor(secsLeft / 60);
+  const secsPart = secsLeft % 60;
 
   return (
     <div className="flex flex-col flex-1">
       <div className="text-center py-4 shrink-0">
         <p className="text-sm text-zinc-400 dark:text-zinc-500">
-          Phase {phase} · Block {block} · {secsLeft}s
+          Phase {phase} · {minsLeft}:{secsPart.toString().padStart(2, "0")}
         </p>
         <p className="text-4xl font-bold text-zinc-900 dark:text-white">
           {points}
@@ -180,8 +165,19 @@ export default function TaskPage() {
 
       <div
         ref={containerRef}
-        className="flex-1 relative overflow-hidden mx-4 mb-4 rounded-xl bg-zinc-100 dark:bg-zinc-900"
+        className="flex-1 relative overflow-hidden mx-4 mb-4 rounded-xl"
+        style={{
+          backgroundColor: PHASE_BG_COLORS[phase - 1],
+          transition: "background-color 0.8s ease",
+        }}
       >
+        {transitionLabel && (
+          <div className="absolute inset-0 flex items-center justify-center z-10 pointer-events-none">
+            <div className="bg-black/50 text-white text-3xl font-bold px-10 py-5 rounded-2xl">
+              {transitionLabel}
+            </div>
+          </div>
+        )}
         {circles.map((c, i) => (
           <button
             key={i}

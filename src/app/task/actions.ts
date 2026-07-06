@@ -6,7 +6,6 @@ import prisma from "@/lib/prisma";
 
 export async function recordResponse(
   phase: number,
-  block: number,
   button: string,
   reinforced: boolean
 ) {
@@ -15,7 +14,7 @@ export async function recordResponse(
   if (!participantId) return;
 
   await prisma.response.create({
-    data: { participantId, phase, block, button, reinforced },
+    data: { participantId, phase, button, reinforced },
   });
 }
 

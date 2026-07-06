@@ -3,7 +3,6 @@ CREATE TABLE "Response" (
     "id" TEXT NOT NULL,
     "participantId" TEXT NOT NULL,
     "phase" INTEGER NOT NULL,
-    "block" INTEGER NOT NULL,
     "button" TEXT NOT NULL,
     "reinforced" BOOLEAN NOT NULL,
     "respondedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,

@@ -20,6 +20,18 @@ model Participant {
   demographics          Demographics? // one participant has at most one demographics record
   instructionsCompleted Boolean       @default(false) // true after passing the check
   comprehensionAttempts Int           @default(0) // how many tries it took
+  taskCompleted         Boolean       @default(false)
+  responses             Response[]
+}
+
+model Response {
+  id            String      @id @default(cuid())
+  participantId String
+  participant   Participant @relation(fields: [participantId], references: [id])
+  phase         Int
+  button        String
+  reinforced    Boolean
+  respondedAt   DateTime    @default(now())
 }
 
 model Demographics {
