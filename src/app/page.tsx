@@ -16,7 +16,7 @@ async function submitId(formData: FormData) {
   });
 
   if (existing) {
-    redirect("/already-completed");
+    redirect("/?error=duplicate");
   }
 
   const participant = await prisma.participant.create({
@@ -31,7 +31,11 @@ async function submitId(formData: FormData) {
   redirect("/consent");
 }
 
-export default function Home() {
+export default async function Home(props: {
+  searchParams: Promise<{ error?: string }>;
+}) {
+  const { error } = await props.searchParams;
+
   return (
     <div className="flex flex-col flex-1 items-center justify-center bg-white dark:bg-black px-6">
       <div className="flex flex-col items-center text-center gap-6 max-w-lg">
@@ -41,6 +45,13 @@ export default function Home() {
         <p className="text-zinc-500 dark:text-zinc-400 text-lg">
           Please enter your Prolific ID to begin.
         </p>
+        {error === "duplicate" && (
+          <p className="text-red-600 dark:text-red-400 text-sm">
+            This Prolific ID has already been used for this study. If you
+            believe this is a mistake, please contact the research team through
+            Prolific.
+          </p>
+        )}
         <form action={submitId} className="flex flex-col gap-4 w-full">
           <input
             type="text"
